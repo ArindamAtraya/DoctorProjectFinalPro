@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+        <meta name="theme-color" content="#2563eb">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
+        <title>HealthConnect - Find Healthcare Providers</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    </head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="navbar">
+                <div class="logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>HealthConnect</span>
+                </div>
+                <div class="nav-links">
+                    <a href="#" class="active">Home</a>
+                    <a href="#doctors">Doctors</a>
+                    <a href="#hospitals">Hospitals</a>
+                    <a href="#tests">Tests</a>
+                    <a href="#contact">Contact</a>
+                </div>
+                <div class="auth-buttons">
+                    <!-- Provider Login Button -->
+                    <a href="provider-auth.html" class="btn btn-outline" style="margin-right: 10px;">
+                        <i class="fas fa-hospital-user"></i>
+                        <span class="btn-text">For Providers</span>
+                    </a>
+                    <!-- Regular User Buttons -->
+                    <button class="btn btn-outline" id="loginBtn">Login</button>
+                    <button class="btn btn-primary" id="signupBtn">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Find & Book Appointment with Your Doctor</h1>
+            <p>Connect with trusted healthcare providers, book appointments, and manage your health all in one place</p>
+            <div class="search-box">
+                <input type="text" id="globalSearch" placeholder="Search for doctors, hospitals, specialties...">
+                <button onclick="searchAll()"><i class="fas fa-search"></i> Search</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Features -->
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <h3>Find Doctors</h3>
+                <p>Search from thousands of specialist doctors near you</p>
+                <button class="search-feature-btn" onclick="openSearchFilter()">
+                    <i class="fas fa-search-plus"></i> Check Availability
+                </button>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <h3>Book Appointments</h3>
+                <p>Easy online booking with real-time availability</p>
+                <button class="search-feature-btn" onclick="openLocationModal()">
+                    <i class="fas fa-calendar-plus"></i> Book Now
+                </button>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-video"></i>
+                </div>
+                <h3>Online Consult</h3>
+                <p>Video consultations from the comfort of your home</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-file-medical"></i>
+                </div>
+                <h3>Medical Reports</h3>
+                <p>Access your test results and medical history online</p>
+                <button class="search-feature-btn" onclick="window.location.href='medical-record.html'">
+                    <i class="fas fa-folder-open"></i> View Medical Records
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="tabs">
+            <div class="tab active" data-tab="doctors">Doctors</div>
+            <div class="tab" data-tab="hospitals">Hospitals</div>
+            <div class="tab" data-tab="pharmacies">Pharmacies</div>
+            <div class="tab" data-tab="tests">Medical Tests</div>
+        </div>
+
+        <!-- Doctors Section -->
+        <div class="dashboard active" id="doctors-tab">
+            <div class="section-header">
+                <h2>Top Doctors Near You</h2>
+                <div class="filter-controls">
+                    <select id="specialtyFilter">
+                        <option value="">All Specialties</option>
+                        <option value="Cardiology">Cardiology</option>
+                        <option value="Dermatology">Dermatology</option>
+                        <option value="Pediatrics">Pediatrics</option>
+                        <option value="Orthopedics">Orthopedics</option>
+                    </select>
+                    <select id="hospitalFilter">
+                        <option value="">All Hospitals</option>
+                    </select>
+                </div>
+                <a href="#" class="view-all">View All <i class="fas fa-chevron-right"></i></a>
+            </div>
+            <div class="cards-container" id="doctors-container">
+                <!-- Doctors loaded dynamically -->
+            </div>
+        </div>
+
+        <!-- Hospitals Section -->
+        <div class="dashboard" id="hospitals-tab">
+            <div class="section-header">
+                <h2>Recommended Hospitals</h2>
+                <a href="#" class="view-all">View All <i class="fas fa-chevron-right"></i></a>
+            </div>
+            <div class="cards-container" id="hospitals-container">
+                <!-- Hospitals loaded dynamically -->
+            </div>
+        </div>
+
+        <!-- Pharmacies Section -->
+        <div class="dashboard" id="pharmacies-tab">
+            <div class="section-header">
+                <h2>Nearby Pharmacies</h2>
+                <a href="#" class="view-all">View All <i class="fas fa-chevron-right"></i></a>
+            </div>
+            <div class="cards-container" id="pharmacies-container">
+                <!-- Pharmacies loaded dynamically -->
+            </div>
+        </div>
+
+        <!-- Tests Section -->
+        <div class="dashboard" id="tests-tab">
+            <div class="section-header">
+                <h2>Book Medical Tests</h2>
+                <a href="#" class="view-all">View All <i class="fas fa-chevron-right"></i></a>
+            </div>
+            <div class="cards-container" id="tests-container">
+                <!-- Tests loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer id="contact">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>HealthConnect</h3>
+                    <p>Your trusted partner in healthcare management. Book appointments, consult online, and access medical records all in one platform.</p>
+                </div>
+                <div class="footer-column">
+                    <h3>Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">Home</a></li>
+                        <li><a href="#doctors">Find Doctors</a></li>
+                        <li><a href="#hospitals">Hospitals</a></li>
+                        <li><a href="#tests">Medical Tests</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Contact Us</h3>
+                    <ul class="footer-links">
+                        <li><i class="fas fa-map-marker-alt"></i> 123 Health Street, Medical City</li>
+                        <li><i class="fas fa-phone"></i> +1 234 567 8900</li>
+                        <li><i class="fas fa-envelope"></i> info@healthconnect.com</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2023 HealthConnect. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Login to Your Account</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input type="email" id="loginEmail" class="form-control" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+            </form>
+            <p style="text-align: center; margin-top: 15px;">Don't have an account? <a href="#" id="showSignup">Sign Up</a></p>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div class="modal" id="signupModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create Your Account</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="signupForm">
+                <div class="form-group">
+                    <label for="signupName">Full Name</label>
+                    <input type="text" id="signupName" class="form-control" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupEmail">Email Address</label>
+                    <input type="email" id="signupEmail" class="form-control" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <input type="password" id="signupPassword" class="form-control" placeholder="Create a password" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupPhone">Phone Number</label>
+                    <input type="tel" id="signupPhone" class="form-control" placeholder="Enter your phone number" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+            </form>
+            <p style="text-align: center; margin-top: 15px;">Already have an account? <a href="#" id="showLogin">Login</a></p>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div class="modal" id="bookingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="bookingTitle">Book Appointment</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label for="bookingDate">Select Date</label>
+                    <input type="date" id="bookingDate" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="bookingTime">Select Time Slot</label>
+                    <select id="bookingTime" class="form-control" required>
+                        <option value="">Choose a time slot</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="bookingNotes">Additional Notes (Optional)</label>
+                    <textarea id="bookingNotes" class="form-control" placeholder="Any specific concerns..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Confirm Booking</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Search Filter Modal -->
+    <div class="modal" id="searchFilterModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Find Doctor Availability</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="searchFilterForm">
+                <div class="form-group">
+                    <label for="doctorName">Doctor Name</label>
+                    <input type="text" id="doctorName" class="form-control" placeholder="Enter doctor name...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" class="form-control" placeholder="Enter city or area...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="specialty">Specialty (Optional)</label>
+                    <select id="specialty" class="form-control">
+                        <option value="">All Specialties</option>
+                        <option value="Cardiology">Cardiology</option>
+                        <option value="Dermatology">Dermatology</option>
+                        <option value="Pediatrics">Pediatrics</option>
+                        <option value="Orthopedics">Orthopedics</option>
+                        <option value="Neurology">Neurology</option>
+                        <option value="Gynecology">Gynecology</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="appointmentDate">Date of Visit</label>
+                    <input type="date" id="appointmentDate" class="form-control" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-search"></i> Find Availability
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Modal -->
+    <div class="modal" id="resultsModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="resultsTitle">Doctor Availability Results</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="results-container" id="resultsContainer">
+                <!-- Results will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Selection Modal for Book Appointments -->
+    <div class="modal" id="locationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Book Appointment - Select Location</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="locationForm">
+                <div class="form-group">
+                    <label for="bookingLocation">Location</label>
+                    <input type="text" id="bookingLocation" class="form-control" placeholder="Enter district or state..." required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bookingSpecialty">Specialty (Optional)</label>
+                    <select id="bookingSpecialty" class="form-control">
+                        <option value="">All Specialties</option>
+                        <option value="Cardiology">Cardiology</option>
+                        <option value="Dermatology">Dermatology</option>
+                        <option value="Pediatrics">Pediatrics</option>
+                        <option value="Orthopedics">Orthopedics</option>
+                        <option value="Neurology">Neurology</option>
+                        <option value="Gynecology">Gynecology</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-search"></i> Find Healthcare Providers
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Healthcare Providers Modal -->
+    <div class="modal" id="providersModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="providersTitle">Healthcare Providers</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="providers-container" id="providersContainer">
+                <!-- Providers will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctors List Modal -->
+    <div class="modal" id="doctorsModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="doctorsTitle">Available Doctors</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="doctors-container" id="doctorsContainer">
+                <!-- Doctors will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

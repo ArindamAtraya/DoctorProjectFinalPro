@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reviews & Ratings - HealthConnect</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .reviews-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .reviews-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .rating-overview {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+
+        .overall-rating {
+            text-align: center;
+        }
+
+        .rating-score {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .star-rating-large {
+            font-size: 1.5rem;
+            color: var(--accent);
+            margin-bottom: 15px;
+        }
+
+        .rating-count {
+            color: var(--gray);
+        }
+
+        .rating-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .rating-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rating-label {
+            width: 80px;
+            font-size: 0.9rem;
+        }
+
+        .rating-progress {
+            flex: 1;
+            height: 8px;
+            background: var(--gray-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .rating-fill {
+            height: 100%;
+            background: var(--accent);
+        }
+
+        .rating-number {
+            width: 30px;
+            text-align: right;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .reviews-actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .review-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .reviewer-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .reviewer-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .reviewer-details h4 {
+            margin: 0 0 5px 0;
+            color: var(--dark);
+        }
+
+        .review-date {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .review-rating {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .star-rating {
+            color: var(--accent);
+        }
+
+        .rating-value {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .review-content h3 {
+            margin: 0 0 10px 0;
+            color: var(--dark);
+        }
+
+        .review-text {
+            line-height: 1.6;
+            color: var(--gray);
+            margin-bottom: 15px;
+        }
+
+        .review-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        .review-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--gray-light);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .doctor-selector {
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="navbar">
+                <div class="logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>HealthConnect</span>
+                </div>
+                <div class="nav-links">
+                    <a href="index.html">Home</a>
+                    <a href="patient-dashboard.html">Dashboard</a>
+                    <a href="reviews-ratings.html" class="active">Reviews</a>
+                    <a href="appointments.html">Appointments</a>
+                </div>
+                <div class="auth-buttons">
+                    <button class="btn btn-outline" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="reviews-container">
+            <div class="reviews-header">
+                <h1>Reviews & Ratings</h1>
+                <button class="btn btn-primary" onclick="showReviewModal()">
+                    <i class="fas fa-pen"></i> Write a Review
+                </button>
+            </div>
+
+            <div class="rating-overview">
+                <div class="overall-rating">
+                    <div class="rating-score" id="overallRating">4.8</div>
+                    <div class="star-rating-large" id="overallStars">
+                        <!-- Stars will be generated by JavaScript -->
+                    </div>
+                    <div class="rating-count" id="totalReviews">Based on 124 reviews</div>
+                </div>
+                <div class="rating-breakdown" id="ratingBreakdown">
+                    <!-- Rating breakdown will be generated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="reviews-actions">
+                <div class="search-box">
+                    <input type="text" id="searchReviews" placeholder="Search reviews...">
+                    <button onclick="searchReviews()"><i class="fas fa-search"></i></button>
+                </div>
+                <select id="filterRating" onchange="loadReviews()">
+                    <option value="all">All Ratings</option>
+                    <option value="5">5 Stars</option>
+                    <option value="4">4 Stars</option>
+                    <option value="3">3 Stars</option>
+                    <option value="2">2 Stars</option>
+                    <option value="1">1 Star</option>
+                </select>
+                <select id="sortReviews" onchange="loadReviews()">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="highest">Highest Rated</option>
+                    <option value="lowest">Lowest Rated</option>
+                </select>
+                <div class="doctor-selector">
+                    <select id="doctorFilter" onchange="loadReviews()">
+                        <option value="all">All Doctors</option>
+                        <!-- Doctors will be populated by JavaScript -->
+                    </select>
+                </div>
+            </div>
+
+            <div id="reviewsList">
+                <!-- Reviews will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Write Review Modal -->
+    <div class="modal" id="writeReviewModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Write a Review</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="reviewForm">
+                <div class="form-group">
+                    <label>Select Doctor *</label>
+                    <select class="form-control" id="reviewDoctor" required>
+                        <option value="">Choose a doctor</option>
+                        <!-- Doctors will be populated by JavaScript -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Overall Rating *</label>
+                    <div class="star-rating-input">
+                        <span class="star" data-value="1"><i class="far fa-star"></i></span>
+                        <span class="star" data-value="2"><i class="far fa-star"></i></span>
+                        <span class="star" data-value="3"><i class="far fa-star"></i></span>
+                        <span class="star" data-value="4"><i class="far fa-star"></i></span>
+                        <span class="star" data-value="5"><i class="far fa-star"></i></span>
+                    </div>
+                    <input type="hidden" id="ratingValue" name="rating" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Review Title *</label>
+                    <input type="text" class="form-control" id="reviewTitle" placeholder="Summarize your experience" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Your Review *</label>
+                    <textarea class="form-control" id="reviewText" rows="4" placeholder="Share details of your experience with the doctor..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Appointment Type</label>
+                    <select class="form-control" id="appointmentType">
+                        <option value="">Select type</option>
+                        <option value="consultation">Consultation</option>
+                        <option value="follow-up">Follow-up</option>
+                        <option value="emergency">Emergency</option>
+                        <option value="surgery">Surgery</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Wait Time (minutes)</label>
+                    <input type="number" class="form-control" id="waitTime" placeholder="How long did you wait?" min="0">
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-paper-plane"></i> Submit Review
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="reviews-ratings.js"></script>
+</body>
+</html>

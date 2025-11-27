@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Healthcare Provider Login - HealthConnect</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --provider-primary: #2563eb;
+            --provider-primary-light: #3b82f6;
+            --provider-primary-dark: #1d4ed8;
+            --provider-secondary: #10b981;
+            --provider-accent: #8b5cf6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .auth-card {
+            background: white;
+            border-radius: 20px;
+            padding: clamp(25px, 5vw, 40px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--provider-primary), var(--provider-secondary));
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: clamp(20px, 4vw, 30px);
+        }
+
+        .auth-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: clamp(1.5rem, 4vw, 1.8rem);
+            font-weight: 700;
+            color: var(--provider-primary);
+            margin-bottom: 8px;
+        }
+
+        .auth-subtitle {
+            color: #64748b;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+        }
+
+        .provider-type-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: clamp(8px, 2vw, 12px);
+            margin-bottom: clamp(20px, 4vw, 25px);
+        }
+
+        .provider-type-btn {
+            padding: clamp(10px, 3vw, 15px) clamp(8px, 2vw, 12px);
+            border: 2px solid var(--provider-primary-light);
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--provider-primary-light), var(--provider-primary));
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 600;
+            font-size: clamp(0.8rem, 3vw, 0.9rem);
+            min-height: 70px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .provider-type-btn:hover {
+            background: linear-gradient(135deg, var(--provider-primary), var(--provider-primary-dark));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+        }
+
+        .provider-type-btn.active {
+            background: linear-gradient(135deg, var(--provider-primary-dark), #1e40af);
+            border-color: var(--provider-primary-dark);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .provider-type-btn i {
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
+            margin-bottom: 6px;
+            opacity: 0.9;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: clamp(20px, 4vw, 25px);
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            text-align: center;
+            padding: clamp(10px, 3vw, 14px);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+            color: #64748b;
+        }
+
+        .auth-tab.active {
+            background: linear-gradient(135deg, var(--provider-primary), var(--provider-primary-dark));
+            color: white;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .auth-tab:hover:not(.active) {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--provider-primary);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(10px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        .form-group {
+            margin-bottom: clamp(15px, 3vw, 20px);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: clamp(12px, 3vw, 16px);
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-control:focus {
+            border-color: var(--provider-primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn {
+            padding: clamp(12px, 3vw, 16px) clamp(20px, 4vw, 25px);
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--provider-primary), var(--provider-primary-dark));
+            color: white;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--provider-primary-dark), #1e40af);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--provider-primary);
+            color: var(--provider-primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--provider-primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .back-to-home {
+            text-align: center;
+            margin-top: clamp(20px, 4vw, 25px);
+            padding-top: clamp(15px, 3vw, 20px);
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .facility-preview {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            padding: clamp(12px, 3vw, 15px);
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+            border-left: 4px solid var(--provider-primary);
+            border: 1px solid #bae6fd;
+        }
+
+        .facility-preview.active {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .preview-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--provider-primary-dark);
+            font-size: clamp(1rem, 3vw, 1.1rem);
+        }
+
+        .preview-details {
+            font-size: clamp(0.8rem, 3vw, 0.9rem);
+            color: #475569;
+            line-height: 1.5;
+        }
+
+        .preview-details div {
+            margin-bottom: 4px;
+        }
+
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+                align-items: flex-start;
+                min-height: 100vh;
+                height: auto;
+            }
+
+            .auth-container {
+                max-width: 100%;
+            }
+
+            .auth-card {
+                border-radius: 15px;
+                padding: 25px 20px;
+            }
+
+            .provider-type-selector {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .provider-type-btn {
+                min-height: 60px;
+                flex-direction: row;
+                justify-content: flex-start;
+                gap: 12px;
+                text-align: left;
+                padding: 15px;
+            }
+
+            .provider-type-btn i {
+                margin-bottom: 0;
+                font-size: 1.3rem;
+            }
+
+            .auth-tabs {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .auth-tab {
+                padding: 12px;
+            }
+        }
+
+        /* Small mobile devices */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .auth-card {
+                padding: 20px 15px;
+                border-radius: 12px;
+            }
+
+            .auth-logo {
+                font-size: 1.4rem;
+            }
+
+            .provider-type-btn {
+                min-height: 55px;
+                padding: 12px;
+                font-size: 0.85rem;
+            }
+
+            .provider-type-btn i {
+                font-size: 1.2rem;
+            }
+
+            .form-control {
+                padding: 14px;
+            }
+
+            .btn {
+                padding: 14px 20px;
+            }
+        }
+
+        /* Very small devices */
+        @media (max-width: 360px) {
+            .auth-card {
+                padding: 18px 12px;
+            }
+
+            .provider-type-btn {
+                min-height: 50px;
+                padding: 10px;
+                font-size: 0.8rem;
+            }
+
+            .provider-type-btn i {
+                font-size: 1.1rem;
+            }
+
+            .form-control {
+                padding: 12px;
+            }
+
+            .btn {
+                padding: 12px 16px;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Tablet and larger screens */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .auth-container {
+                max-width: 450px;
+            }
+        }
+
+        /* Large screens */
+        @media (min-width: 1025px) {
+            .auth-container {
+                max-width: 500px;
+            }
+        }
+
+        /* Landscape mode for mobile */
+        @media (max-height: 600px) and (orientation: landscape) {
+            body {
+                align-items: flex-start;
+                padding: 10px;
+            }
+
+            .auth-card {
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            .provider-type-selector {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .provider-type-btn {
+                min-height: 50px;
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        /* High DPI screens */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .auth-card {
+                border: 1px solid rgba(0, 0, 0, 0.05);
+            }
+        }
+
+        /* Reduced motion for accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            .auth-card {
+                background: #1e293b;
+                color: white;
+            }
+
+            .form-group label {
+                color: #e2e8f0;
+            }
+
+            .form-control {
+                background: #334155;
+                border-color: #475569;
+                color: white;
+            }
+
+            .form-control:focus {
+                border-color: var(--provider-primary);
+            }
+
+            .facility-preview {
+                background: linear-gradient(135deg, #1e3a8a, #1e40af);
+                border-color: #3730a3;
+            }
+
+            .preview-title {
+                color: #e0f2fe;
+            }
+
+            .auth-tabs {
+                background: #334155;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>HealthConnect</span>
+                </div>
+                <div class="auth-subtitle">Healthcare Provider Portal</div>
+            </div>
+
+            <!-- Provider Type Selection -->
+            <div class="provider-type-selector">
+                <div class="provider-type-btn active" data-type="pharmacy">
+                    <i class="fas fa-prescription-bottle"></i>
+                    <span>Pharmacy</span>
+                </div>
+                <div class="provider-type-btn" data-type="clinic">
+                    <i class="fas fa-clinic-medical"></i>
+                    <span>Clinic</span>
+                </div>
+                <div class="provider-type-btn" data-type="hospital">
+                    <i class="fas fa-hospital"></i>
+                    <span>Hospital</span>
+                </div>
+            </div>
+
+            <!-- Auth Tabs -->
+            <div class="auth-tabs">
+                <div class="auth-tab active" data-tab="login">Login</div>
+                <div class="auth-tab" data-tab="signup">Register</div>
+            </div>
+
+            <!-- Login Form -->
+            <form id="providerLoginForm" class="auth-form active">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" class="form-control" id="providerLoginEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" id="providerLoginPassword" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Login as Provider</span>
+                </button>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="providerSignupForm" class="auth-form">
+                <div class="form-group">
+                    <label>Facility Name *</label>
+                    <input type="text" class="form-control" id="facilityName" placeholder="Enter your facility name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address *</label>
+                    <input type="email" class="form-control" id="providerSignupEmail" placeholder="Enter facility email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password *</label>
+                    <input type="password" class="form-control" id="providerSignupPassword" placeholder="Create a password" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" class="form-control" id="providerPhone" placeholder="Enter facility phone number" required>
+                </div>
+                <div class="form-group">
+                    <label>Registration Number *</label>
+                    <input type="text" class="form-control" id="registrationNumber" placeholder="Enter registration/license number" required>
+                </div>
+                <div class="form-group">
+                    <label>Address *</label>
+                    <textarea class="form-control" id="facilityAddress" rows="3" placeholder="Enter full facility address" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>District *</label>
+                    <input type="text" class="form-control" id="facilityDistrict" placeholder="Enter district" required>
+                </div>
+                <div class="form-group">
+                    <label>State *</label>
+                    <input type="text" class="form-control" id="facilityState" placeholder="Enter state" required>
+                </div>
+
+                <!-- Facility Preview -->
+                <div class="facility-preview" id="facilityPreview">
+                    <div class="preview-title" id="previewFacilityName">Your Facility Name</div>
+                    <div class="preview-details">
+                        <div id="previewFacilityType">Pharmacy</div>
+                        <div id="previewFacilityAddress">Your facility address will appear here</div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="margin-top: 20px;">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Register Facility</span>
+                </button>
+            </form>
+
+            <div class="back-to-home">
+                <a href="index.html" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Home</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="provider-auth.js"></script>
+</body>
+</html>

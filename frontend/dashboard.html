@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - HealthConnect</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--dark);
+            color: white;
+            padding: 30px 20px;
+            position: fixed;
+            width: 250px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .sidebar-header .logo {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .user-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 2rem;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .sidebar-nav li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar-nav a {
+            color: var(--gray-light);
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+
+        .sidebar-nav a:hover,
+        .sidebar-nav a.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            padding: 0;
+            background: #f8fafc;
+        }
+
+        .top-bar {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 15px;
+        }
+
+        .search-bar input {
+            padding: 10px 15px;
+            border: 1px solid var(--gray-light);
+            border-radius: 8px;
+            width: 300px;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Dashboard Sections */
+        .dashboard-section {
+            padding: 30px;
+            display: none;
+        }
+
+        .dashboard-section.active {
+            display: block;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Tables */
+        .data-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .table-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--gray-light);
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .table-content {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .action-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .action-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .action-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: 1000;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .search-bar input {
+                width: 200px;
+            }
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--dark);
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-confirmed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-completed {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-cancelled {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Calendar */
+        .calendar-widget {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .calendar-day {
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .calendar-day:hover {
+            background: var(--gray-light);
+        }
+
+        .calendar-day.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .calendar-day.has-appointment {
+            position: relative;
+        }
+
+        .calendar-day.has-appointment::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: var(--secondary);
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-heartbeat"></i>
+                    HealthConnect
+                </div>
+                <small>Doctor Dashboard</small>
+            </div>
+
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <h3 id="userName">Dr. Sarah Wilson</h3>
+                <p id="userRole">Cardiologist</p>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li><a href="#overview" class="nav-link active" data-section="overview">
+                    <i class="fas fa-chart-pie"></i> Overview
+                </a></li>
+                <li><a href="#appointments" class="nav-link" data-section="appointments">
+                    <i class="fas fa-calendar-check"></i> Appointments
+                </a></li>
+                <li><a href="#patients" class="nav-link" data-section="patients">
+                    <i class="fas fa-users"></i> Patients
+                </a></li>
+                <li><a href="#schedule" class="nav-link" data-section="schedule">
+                    <i class="fas fa-clock"></i> Schedule
+                </a></li>
+                <li><a href="#reports" class="nav-link" data-section="reports">
+                    <i class="fas fa-file-medical"></i> Medical Reports
+                </a></li>
+                <li><a href="#prescriptions" class="nav-link" data-section="prescriptions">
+                    <i class="fas fa-prescription"></i> Prescriptions
+                </a></li>
+                <li><a href="#profile" class="nav-link" data-section="profile">
+                    <i class="fas fa-user-cog"></i> Profile
+                </a></li>
+                <li><a href="#" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="search-bar">
+                    <input type="text" placeholder="Search appointments, patients...">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+                <div class="user-menu">
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </div>
+                    <div class="user-greeting">
+                        Welcome, <strong id="greetingName">Dr. Wilson</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Sections -->
+            <div class="dashboard-sections">
+                <!-- Overview Section -->
+                <div class="dashboard-section active" id="overview-section">
+                    <div class="section-header">
+                        <h2>Dashboard Overview</h2>
+                        <div class="date-filter">
+                            <select id="timeRange">
+                                <option value="today">Today</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalAppointments">12</div>
+                            <div class="stat-label">Total Appointments</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="todayAppointments">5</div>
+                            <div class="stat-label">Today's Appointments</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="pendingAppointments">3</div>
+                            <div class="stat-label">Pending</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">₹<span id="totalEarnings">8,400</span></div>
+                            <div class="stat-label">Total Earnings</div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions">
+                        <div class="action-card" onclick="switchSection('appointments')">
+                            <div class="action-icon">
+                                <i class="fas fa-calendar-plus"></i>
+                            </div>
+                            <div>New Appointment</div>
+                        </div>
+                        <div class="action-card" onclick="switchSection('schedule')">
+                            <div class="action-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div>Manage Schedule</div>
+                        </div>
+                        <div class="action-card" onclick="switchSection('patients')">
+                            <div class="action-icon">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <div>Add Patient</div>
+                        </div>
+                        <div class="action-card" onclick="switchSection('prescriptions')">
+                            <div class="action-icon">
+                                <i class="fas fa-prescription"></i>
+                            </div>
+                            <div>Write Prescription</div>
+                        </div>
+                    </div>
+
+                    <div class="content-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+                        <!-- Today's Appointments -->
+                        <div class="data-table">
+                            <div class="table-header">
+                                <h3>Today's Appointments</h3>
+                                <button class="btn btn-outline btn-sm">View All</button>
+                            </div>
+                            <div class="table-content">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Patient</th>
+                                            <th>Time</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="todayAppointmentsList">
+                                        <!-- Appointments will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Calendar Widget -->
+                        <div class="calendar-widget">
+                            <div class="calendar-header">
+                                <h3>October 2023</h3>
+                                <div class="calendar-controls">
+                                    <button class="btn btn-outline btn-sm"><i class="fas fa-chevron-left"></i></button>
+                                    <button class="btn btn-outline btn-sm"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                            </div>
+                            <div class="calendar-grid" id="calendarGrid">
+                                <!-- Calendar will be generated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appointments Section -->
+                <div class="dashboard-section" id="appointments-section">
+                    <div class="section-header">
+                        <h2>Appointment Management</h2>
+                        <button class="btn btn-primary" onclick="showNewAppointmentModal()">
+                            <i class="fas fa-plus"></i> New Appointment
+                        </button>
+                    </div>
+
+                    <div class="data-table">
+                        <div class="table-header">
+                            <div class="filter-tabs">
+                                <button class="filter-tab active" data-filter="all">All</button>
+                                <button class="filter-tab" data-filter="pending">Pending</button>
+                                <button class="filter-tab" data-filter="confirmed">Confirmed</button>
+                                <button class="filter-tab" data-filter="completed">Completed</button>
+                            </div>
+                            <div class="table-actions">
+                                <input type="date" id="appointmentDateFilter">
+                                <button class="btn btn-outline btn-sm">Export</button>
+                            </div>
+                        </div>
+                        <div class="table-content">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Patient</th>
+                                        <th>Date & Time</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="appointmentsList">
+                                    <!-- Appointments will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Patients Section -->
+                <div class="dashboard-section" id="patients-section">
+                    <div class="section-header">
+                        <h2>Patient Management</h2>
+                        <button class="btn btn-primary" onclick="showNewPatientModal()">
+                            <i class="fas fa-user-plus"></i> Add Patient
+                        </button>
+                    </div>
+
+                    <div class="data-table">
+                        <div class="table-header">
+                            <div class="search-patient">
+                                <input type="text" placeholder="Search patients..." id="patientSearch">
+                            </div>
+                            <button class="btn btn-outline btn-sm">Export Patients</button>
+                        </div>
+                        <div class="table-content">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Patient ID</th>
+                                        <th>Name</th>
+                                        <th>Phone</th>
+                                        <th>Last Visit</th>
+                                        <th>Medical History</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="patientsList">
+                                    <!-- Patients will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schedule Section -->
+                <div class="dashboard-section" id="schedule-section">
+                    <div class="section-header">
+                        <h2>Schedule Management</h2>
+                        <button class="btn btn-primary" onclick="showScheduleModal()">
+                            <i class="fas fa-edit"></i> Edit Schedule
+                        </button>
+                    </div>
+
+                    <div class="schedule-container">
+                        <div class="weekly-schedule">
+                            <div class="schedule-header">
+                                <h3>Weekly Schedule</h3>
+                                <div class="week-navigation">
+                                    <button class="btn btn-outline btn-sm">Previous Week</button>
+                                    <span id="currentWeek">Oct 15 - Oct 21, 2023</span>
+                                    <button class="btn btn-outline btn-sm">Next Week</button>
+                                </div>
+                            </div>
+                            <div class="schedule-grid" id="weeklySchedule">
+                                <!-- Schedule will be generated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add more sections for Reports, Prescriptions, Profile etc. -->
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="newAppointmentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">New Appointment</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="newAppointmentForm">
+                <div class="form-group">
+                    <label>Select Patient</label>
+                    <select class="form-control" required>
+                        <option value="">Choose a patient</option>
+                        <option value="1">John Doe</option>
+                        <option value="2">Jane Smith</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Appointment Date</label>
+                    <input type="date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Time Slot</label>
+                    <select class="form-control" required>
+                        <option value="">Choose time slot</option>
+                        <option value="09:00">09:00 AM</option>
+                        <option value="10:00">10:00 AM</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Appointment Type</label>
+                    <select class="form-control">
+                        <option value="consultation">Consultation</option>
+                        <option value="followup">Follow-up</option>
+                        <option value="emergency">Emergency</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea class="form-control" rows="3" placeholder="Any special notes..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Create Appointment</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Dashboard JavaScript
+        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || {
+            name: 'Dr. Sarah Wilson',
+            role: 'Cardiologist',
+            email: 'sarah.wilson@hospital.com'
+        };
+
+        // Initialize Dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+            loadDashboardData();
+        });
+
+        function initializeDashboard() {
+            // Set user info
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userRole').textContent = currentUser.role;
+            document.getElementById('greetingName').textContent = currentUser.name.split(' ')[1];
+
+            // Navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const section = this.getAttribute('data-section');
+                    switchSection(section);
+                    
+                    // Update active nav
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // Menu toggle for mobile
+            document.getElementById('menuToggle').addEventListener('click', function() {
+                document.getElementById('sidebar').classList.toggle('active');
+            });
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('currentUser');
+                    window.location.href = 'index.html';
+                }
+            });
+
+            // Modal controls
+            document.querySelectorAll('.close-modal').forEach(btn => {
+                btn.addEventListener('click', closeAllModals);
+            });
+
+            // Generate calendar
+            generateCalendar();
+            generateWeeklySchedule();
+        }
+
+        function switchSection(section) {
+            // Hide all sections
+            document.querySelectorAll('.dashboard-section').forEach(sec => {
+                sec.classList.remove('active');
+            });
+
+            // Show selected section
+            document.getElementById(`${section}-section`).classList.add('active');
+        }
+
+        function loadDashboardData() {
+            // Load today's appointments
+            loadTodaysAppointments();
+            
+            // Load all appointments
+            loadAllAppointments();
+            
+            // Load patients
+            loadPatients();
+            
+            // Update stats
+            updateDashboardStats();
+        }
+
+        function loadTodaysAppointments() {
+            const appointments = [
+                {
+                    id: 'A001',
+                    patient: 'John Doe',
+                    time: '09:00 AM',
+                    status: 'confirmed',
+                    type: 'Consultation'
+                },
+                {
+                    id: 'A002',
+                    patient: 'Jane Smith',
+                    time: '10:30 AM',
+                    status: 'pending',
+                    type: 'Follow-up'
+                },
+                {
+                    id: 'A003',
+                    patient: 'Mike Johnson',
+                    time: '02:15 PM',
+                    status: 'confirmed',
+                    type: 'Emergency'
+                }
+            ];
+
+            const container = document.getElementById('todayAppointmentsList');
+            container.innerHTML = '';
+
+            appointments.forEach(apt => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${apt.patient}</td>
+                    <td>${apt.time}</td>
+                    <td><span class="status-badge status-${apt.status}">${apt.status}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary btn-sm" onclick="viewAppointment('${apt.id}')">View</button>
+                            <button class="btn btn-outline btn-sm" onclick="editAppointment('${apt.id}')">Edit</button>
+                        </div>
+                    </td>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function loadAllAppointments() {
+            // Similar to loadTodaysAppointments but with more data
+            const appointments = [
+                {
+                    id: 'A001',
+                    patient: 'John Doe',
+                    date: '2023-10-20',
+                    time: '09:00 AM',
+                    type: 'Consultation',
+                    status: 'confirmed'
+                },
+                {
+                    id: 'A002', 
+                    patient: 'Jane Smith',
+                    date: '2023-10-20',
+                    time: '10:30 AM',
+                    type: 'Follow-up',
+                    status: 'pending'
+                }
+            ];
+
+            const container = document.getElementById('appointmentsList');
+            container.innerHTML = '';
+
+            appointments.forEach(apt => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${apt.id}</td>
+                    <td>${apt.patient}</td>
+                    <td>${apt.date} at ${apt.time}</td>
+                    <td>${apt.type}</td>
+                    <td><span class="status-badge status-${apt.status}">${apt.status}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary btn-sm">View</button>
+                            <button class="btn btn-outline btn-sm">Edit</button>
+                        </div>
+                    </td>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function loadPatients() {
+            const patients = [
+                {
+                    id: 'P001',
+                    name: 'John Doe',
+                    phone: '+1 234-567-8900',
+                    lastVisit: '2023-10-15',
+                    history: 'Hypertension'
+                },
+                {
+                    id: 'P002',
+                    name: 'Jane Smith', 
+                    phone: '+1 234-567-8901',
+                    lastVisit: '2023-10-10',
+                    history: 'Diabetes'
+                }
+            ];
+
+            const container = document.getElementById('patientsList');
+            container.innerHTML = '';
+
+            patients.forEach(patient => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${patient.id}</td>
+                    <td>${patient.name}</td>
+                    <td>${patient.phone}</td>
+                    <td>${patient.lastVisit}</td>
+                    <td>${patient.history}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary btn-sm">View</button>
+                            <button class="btn btn-outline btn-sm">History</button>
+                        </div>
+                    </td>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function updateDashboardStats() {
+            // Update stats cards with real data
+            document.getElementById('totalAppointments').textContent = '12';
+            document.getElementById('todayAppointments').textContent = '5';
+            document.getElementById('pendingAppointments').textContent = '3';
+            document.getElementById('totalEarnings').textContent = '8,400';
+        }
+
+        function generateCalendar() {
+            const calendarGrid = document.getElementById('calendarGrid');
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            
+            // Add day headers
+            days.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'calendar-day';
+                dayHeader.style.fontWeight = '600';
+                dayHeader.textContent = day;
+                calendarGrid.appendChild(dayHeader);
+            });
+
+            // Add calendar days (simplified)
+            for (let i = 1; i <= 31; i++) {
+                const day = document.createElement('div');
+                day.className = 'calendar-day';
+                day.textContent = i;
+                
+                // Mark some days as having appointments
+                if ([5, 12, 19, 26].includes(i)) {
+                    day.classList.add('has-appointment');
+                }
+                
+                if (i === 20) {
+                    day.classList.add('active');
+                }
+                
+                calendarGrid.appendChild(day);
+            }
+        }
+
+        function generateWeeklySchedule() {
+            const scheduleGrid = document.getElementById('weeklySchedule');
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            const timeSlots = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
+
+            // Create schedule grid
+            scheduleGrid.innerHTML = `
+                <div class="time-column">
+                    <div class="time-header"></div>
+                    ${timeSlots.map(time => `<div class="time-slot">${time}</div>`).join('')}
+                </div>
+                ${days.map(day => `
+                    <div class="day-column">
+                        <div class="day-header">${day}</div>
+                        ${timeSlots.map(time => `<div class="time-slot" data-day="${day}" data-time="${time}"></div>`).join('')}
+                    </div>
+                `).join('')}
+            `;
+
+            // Add some sample appointments
+            const appointments = [
+                { day: 'Monday', time: '10:00', patient: 'John Doe', type: 'consultation' },
+                { day: 'Wednesday', time: '14:00', patient: 'Jane Smith', type: 'follow-up' },
+                { day: 'Friday', time: '11:00', patient: 'Mike Johnson', type: 'emergency' }
+            ];
+
+            appointments.forEach(apt => {
+                const slot = scheduleGrid.querySelector(`[data-day="${apt.day}"][data-time="${apt.time}"]`);
+                if (slot) {
+                    slot.innerHTML = `
+                        <div class="appointment-slot" style="background: var(--primary); color: white; padding: 5px; border-radius: 4px; font-size: 0.8rem;">
+                            ${apt.patient}
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function showNewAppointmentModal() {
+            document.getElementById('newAppointmentModal').style.display = 'flex';
+        }
+
+        function closeAllModals() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.style.display = 'none';
+            });
+        }
+
+        function viewAppointment(appointmentId) {
+            alert(`View appointment ${appointmentId}`);
+            // Implement view appointment functionality
+        }
+
+        function editAppointment(appointmentId) {
+            alert(`Edit appointment ${appointmentId}`);
+            // Implement edit appointment functionality
+        }
+
+        // Add more dashboard functions as needed...
+    </script>
+</body>
+</html>
