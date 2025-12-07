@@ -829,6 +829,237 @@ app.get('/api/provider-appointments', authenticateToken, requireProvider, async 
     }
 });
 
+// Walk-in appointment registration by provider
+app.post('/api/provider-appointments/walk-in', authenticateToken, requireProvider, async (req, res) => {
+    const maxRetries = 5;
+    let retries = 0;
+    
+    while (retries < maxRetries) {
+        try {
+            const { doctorId, patientName, patientPhone, date, time, notes } = req.body;
+
+            // Validate required fields
+            if (!doctorId || !patientName || !patientPhone || !date || !time) {
+                return res.status(400).json({ 
+                    error: 'Doctor, patient name, phone, date and time are required' 
+                });
+            }
+
+            // Validate phone number format (basic validation)
+            const phoneRegex = /^[0-9]{10}$/;
+            if (!phoneRegex.test(patientPhone.replace(/\D/g, '').slice(-10))) {
+                return res.status(400).json({ 
+                    error: 'Please provide a valid 10-digit phone number' 
+                });
+            }
+
+            // Get provider
+            const provider = await HealthcareProvider.findOne({ userId: req.user.id });
+            if (!provider) {
+                return res.status(404).json({ error: 'Provider not found' });
+            }
+
+            // Get doctor and verify they belong to this provider
+            const doctor = await Doctor.findById(doctorId).populate('providerId');
+            if (!doctor) {
+                return res.status(404).json({ error: 'Doctor not found' });
+            }
+
+            if (doctor.providerId._id.toString() !== provider._id.toString()) {
+                return res.status(403).json({ error: 'This doctor does not belong to your facility' });
+            }
+
+            // Get the next queue number for this doctor, date, and time slot
+            // This uses the SAME logic as online bookings to ensure synchronization
+            const maxQueueResult = await Appointment.aggregate([
+                {
+                    $match: {
+                        doctorId: doctor._id,
+                        date: date,
+                        time: time
+                    }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        maxQueue: { $max: '$queueNumber' }
+                    }
+                }
+            ]);
+
+            const queueNumber = maxQueueResult.length > 0 && maxQueueResult[0].maxQueue
+                ? maxQueueResult[0].maxQueue + 1
+                : 1;
+
+            // Create the walk-in appointment
+            const appointment = new Appointment({
+                doctorId: doctor._id,
+                doctorName: doctor.name,
+                providerId: provider._id,
+                providerName: provider.name,
+                patientId: null, // Walk-in patients don't have user accounts
+                patientName: patientName.trim(),
+                patientPhone: patientPhone.trim(),
+                date,
+                time,
+                queueNumber,
+                consultationFee: doctor.consultationFee,
+                notes: notes || 'Walk-in patient',
+                status: 'confirmed', // Walk-ins are automatically confirmed
+                isWalkIn: true // Mark as walk-in for reference
+            });
+
+            await appointment.save();
+
+            res.status(201).json({
+                message: 'Walk-in appointment registered successfully',
+                appointment: {
+                    id: appointment._id,
+                    queueNumber: appointment.queueNumber,
+                    doctorName: appointment.doctorName,
+                    patientName: appointment.patientName,
+                    patientPhone: appointment.patientPhone,
+                    date: appointment.date,
+                    time: appointment.time,
+                    consultationFee: appointment.consultationFee,
+                    status: appointment.status
+                }
+            });
+            return;
+        } catch (error) {
+            // Handle duplicate key error (race condition) by retrying
+            if (error.code === 11000 && retries < maxRetries - 1) {
+                retries++;
+                continue;
+            }
+            console.error('Walk-in appointment error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+            return;
+        }
+    }
+    
+    res.status(500).json({ error: 'Failed to register walk-in appointment after multiple attempts' });
+});
+
+// Get available time slots for a doctor on a specific date (for walk-in booking)
+app.get('/api/doctor-available-slots/:doctorId', authenticateToken, requireProvider, async (req, res) => {
+    try {
+        const { date } = req.query;
+        const doctorId = req.params.doctorId;
+
+        if (!date) {
+            return res.status(400).json({ error: 'Date is required' });
+        }
+
+        const doctor = await Doctor.findById(doctorId);
+        if (!doctor) {
+            return res.status(404).json({ error: 'Doctor not found' });
+        }
+
+        // Get doctor's available slots configuration
+        // The day format in availableSlots uses full day names like "Monday", "Tuesday", etc.
+        const dayOfWeek = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' });
+        const daySlots = doctor.availableSlots?.find(slot => slot.day === dayOfWeek);
+
+        // Check if doctor has configured slots for this day
+        if (!daySlots || !daySlots.timeSlots || daySlots.timeSlots.length === 0) {
+            // If no specific slots configured, generate default slots based on visiting hours
+            const visitingHours = doctor.visitingHours?.find(vh => vh.day === dayOfWeek);
+            
+            if (visitingHours && visitingHours.startTime && visitingHours.endTime) {
+                // Generate slots from visiting hours (every 30 minutes)
+                const slots = generateTimeSlotsFromHours(visitingHours.startTime, visitingHours.endTime);
+                
+                // Get existing appointments
+                const existingAppointments = await Appointment.find({
+                    doctorId: doctorId,
+                    date: date,
+                    status: { $in: ['pending', 'confirmed'] }
+                });
+
+                // Get max queue number for each time slot
+                const slotQueues = {};
+                existingAppointments.forEach(apt => {
+                    if (!slotQueues[apt.time] || apt.queueNumber > slotQueues[apt.time]) {
+                        slotQueues[apt.time] = apt.queueNumber;
+                    }
+                });
+
+                const slotsWithAvailability = slots.map(slot => ({
+                    time: slot,
+                    bookedCount: existingAppointments.filter(a => a.time === slot).length,
+                    nextQueueNumber: (slotQueues[slot] || 0) + 1
+                }));
+
+                return res.json({
+                    availableSlots: slotsWithAvailability,
+                    doctorName: doctor.name,
+                    slotsPerDay: doctor.slotsPerDay
+                });
+            }
+            
+            return res.json({ 
+                availableSlots: [],
+                message: 'Doctor is not available on this day'
+            });
+        }
+
+        // Get existing appointments for this doctor on this date
+        const existingAppointments = await Appointment.find({
+            doctorId: doctorId,
+            date: date,
+            status: { $in: ['pending', 'confirmed'] }
+        });
+
+        // Get max queue number for each time slot (more accurate than just counting)
+        const slotQueues = {};
+        existingAppointments.forEach(apt => {
+            if (!slotQueues[apt.time] || apt.queueNumber > slotQueues[apt.time]) {
+                slotQueues[apt.time] = apt.queueNumber;
+            }
+        });
+
+        // Return slots with their current booking counts and next queue number
+        const slotsWithAvailability = daySlots.timeSlots.map(slot => ({
+            time: slot,
+            bookedCount: existingAppointments.filter(a => a.time === slot).length,
+            nextQueueNumber: (slotQueues[slot] || 0) + 1
+        }));
+
+        res.json({
+            availableSlots: slotsWithAvailability,
+            doctorName: doctor.name,
+            slotsPerDay: doctor.slotsPerDay
+        });
+    } catch (error) {
+        console.error('Get available slots error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Helper function to generate time slots from visiting hours
+function generateTimeSlotsFromHours(startTime, endTime) {
+    const slots = [];
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+    
+    let currentHour = startHour;
+    let currentMin = startMin;
+    
+    while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
+        const timeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMin).padStart(2, '0')}`;
+        slots.push(timeStr);
+        
+        currentMin += 30;
+        if (currentMin >= 60) {
+            currentMin = 0;
+            currentHour++;
+        }
+    }
+    
+    return slots;
+}
+
 app.put('/api/appointments/:id/payment', authenticateToken, requireProvider, async (req, res) => {
     try {
         const { amountPaid } = req.body;

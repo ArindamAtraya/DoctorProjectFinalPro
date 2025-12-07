@@ -432,7 +432,12 @@
             </div>
 
             <div class="card">
-                <h2>Recent Appointments</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>Appointments</h2>
+                    <button class="btn btn-success" onclick="openWalkInModal()" style="background: #10b981;">
+                        <i class="fas fa-walking"></i> Walk-in Patient
+                    </button>
+                </div>
                 <div id="recentAppointments"></div>
             </div>
         </div>
@@ -646,6 +651,53 @@
                 </div>
                 <button type="submit" class="btn btn-success" style="width: 100%;">
                     Update Payment
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="walkInModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-walking"></i> Register Walk-in Patient</h2>
+                <button class="close-modal" onclick="closeWalkInModal()">&times;</button>
+            </div>
+            <form id="walkInForm" onsubmit="registerWalkInPatient(event)">
+                <div class="form-group">
+                    <label>Patient Name *</label>
+                    <input type="text" id="walkInPatientName" required placeholder="Enter patient's full name">
+                </div>
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" id="walkInPatientPhone" required placeholder="10-digit phone number" 
+                           pattern="[0-9]{10}" title="Please enter a valid 10-digit phone number">
+                </div>
+                <div class="form-group">
+                    <label>Select Doctor *</label>
+                    <select id="walkInDoctor" required onchange="loadDoctorTimeSlots()">
+                        <option value="">-- Select a Doctor --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Date *</label>
+                    <input type="date" id="walkInDate" required onchange="loadDoctorTimeSlots()">
+                </div>
+                <div class="form-group">
+                    <label>Time Slot *</label>
+                    <select id="walkInTimeSlot" required>
+                        <option value="">-- Select date and doctor first --</option>
+                    </select>
+                    <small id="queueInfo" style="color: #6b7280; display: block; margin-top: 5px;"></small>
+                </div>
+                <div class="form-group">
+                    <label>Notes (Optional)</label>
+                    <textarea id="walkInNotes" placeholder="Any notes about the patient's visit..." rows="3" 
+                              style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;"></textarea>
+                </div>
+                <div id="walkInError" style="color: #ef4444; margin-bottom: 10px; display: none;"></div>
+                <div id="walkInSuccess" style="color: #10b981; margin-bottom: 10px; display: none;"></div>
+                <button type="submit" class="btn btn-success" style="width: 100%; background: #10b981;">
+                    <i class="fas fa-user-plus"></i> Register Walk-in Patient
                 </button>
             </form>
         </div>

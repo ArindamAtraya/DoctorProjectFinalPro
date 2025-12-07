@@ -22,7 +22,12 @@ const appointmentSchema = new mongoose.Schema({
     patientId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: false,
+        default: null
+    },
+    isWalkIn: {
+        type: Boolean,
+        default: false
     },
     patientName: {
         type: String,
@@ -70,6 +75,12 @@ const appointmentSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// Non-unique index for provider queries
 appointmentSchema.index({ providerId: 1, date: 1, queueNumber: 1 });
+
+// Unique compound index to prevent duplicate queue numbers for same doctor/date/time
+// This ensures atomic queue assignment - if two requests try to create the same queue number,
+// one will fail with a duplicate key error and retry with the next number
+appointmentSchema.index({ doctorId: 1, date: 1, time: 1, queueNumber: 1 }, { unique: true });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);

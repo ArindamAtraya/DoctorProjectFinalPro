@@ -206,7 +206,9 @@ function generateCalendar() {
             dayElement.appendChild(monthAbbr);
         }
         
-        dayElement.setAttribute('data-date', dayDate.toISOString().split('T')[0]);
+        // Use local date format to avoid timezone issues
+        const dateStr = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
+        dayElement.setAttribute('data-date', dateStr);
         
         // Only add click handler for non-past dates
         if (!isPastDate) {
@@ -271,7 +273,11 @@ function selectDate(dateString) {
     // Prevent selecting past dates
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const dateToSelect = new Date(dateString);
+    
+    // Parse date string properly to avoid timezone issues
+    // dateString is in format "YYYY-MM-DD"
+    const [year, month, day] = dateString.split('-').map(Number);
+    const dateToSelect = new Date(year, month - 1, day);
     dateToSelect.setHours(0, 0, 0, 0);
     
     if (dateToSelect < today) {
@@ -279,7 +285,8 @@ function selectDate(dateString) {
         return;
     }
     
-    selectedDate = new Date(dateString);
+    // Create date in local timezone (not UTC)
+    selectedDate = new Date(year, month - 1, day);
     
     // Update calendar selection with animation
     document.querySelectorAll('.calendar-day').forEach(day => {
@@ -689,9 +696,12 @@ function getNotificationIcon(type) {
     return icons[type] || 'info-circle';
 }
 
-// Utility function to format date
+// Utility function to format date (in local timezone, not UTC)
 function formatDate(date) {
-    return date.toISOString().split('T')[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 // Add CSS for pulse animation

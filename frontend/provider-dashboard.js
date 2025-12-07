@@ -3,6 +3,7 @@ const API_BASE = 'http://localhost:5000/api';
 let currentProvider = null;
 let currentDoctors = [];
 let currentAppointments = [];
+let appointmentViewFilter = 'today'; // 'today', 'past', 'future'
 
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token');
@@ -231,7 +232,9 @@ function displayAppointments() {
 }
 
 async function loadStats() {
-    const today = new Date().toISOString().split('T')[0];
+    // Get today's date in local timezone (YYYY-MM-DD format)
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     
     document.getElementById('totalDoctors').textContent = currentDoctors.length;
     
@@ -244,67 +247,153 @@ async function loadStats() {
     const revenue = currentAppointments.reduce((sum, a) => sum + a.amountPaid, 0);
     document.getElementById('totalRevenue').textContent = `₹${revenue}`;
 
-    const recentDiv = document.getElementById('recentAppointments');
-    const recent = currentAppointments.slice(0, 50); // Get more to show by doctor
-    
-    if (recent.length === 0) {
-        recentDiv.innerHTML = '<p>No recent appointments</p>';
-    } else {
-        // Group appointments by doctor
-        const groupedByDoctor = {};
-        recent.forEach(appt => {
-            if (!groupedByDoctor[appt.doctorName]) {
-                groupedByDoctor[appt.doctorName] = [];
-            }
-            groupedByDoctor[appt.doctorName].push(appt);
-        });
+    displayFilteredAppointments();
+}
 
-        // Generate HTML with doctor headers and doctor-specific queue numbers
-        let html = '';
-        Object.entries(groupedByDoctor).forEach(([doctorName, appointments]) => {
-            html += `
-                <div class="doctor-section" style="margin-bottom: 30px;">
-                    <div class="doctor-section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #2563eb;">
-                        <h3 style="margin: 0; color: #2563eb; font-size: 1.2em;">
-                            <i class="fas fa-user-md" style="margin-right: 8px;"></i>${doctorName}
-                        </h3>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="btn btn-outline" onclick="viewDoctorPatients('${doctorName}')" 
-                                    style="padding: 8px 16px; font-size: 0.9em;">
-                                <i class="fas fa-users"></i> View Patients
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteDoctoAppointments('${doctorName}')" 
-                                    style="padding: 8px 16px; font-size: 0.9em; background: #ef4444; color: white;">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
-                        </div>
-                    </div>
-                    <table class="appointments-table" style="margin-bottom: 20px;">
-                        <thead>
-                            <tr>
-                                <th>Queue #</th>
-                                <th>Patient</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${appointments.map((appt, index) => `
-                                <tr>
-                                    <td><strong>#${index + 1}</strong></td>
-                                    <td>${appt.patientName}</td>
-                                    <td>${appt.date}</td>
-                                    <td><span class="badge ${appt.status === 'confirmed' ? 'badge-success' : appt.status === 'completed' ? 'badge-info' : 'badge-warning'}">${appt.status}</span></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        });
-        
-        recentDiv.innerHTML = html;
+function setAppointmentFilter(filter) {
+    appointmentViewFilter = filter;
+    
+    // Update button styles
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-filter="${filter}"]`)?.classList.add('active');
+    
+    displayFilteredAppointments();
+}
+
+function displayFilteredAppointments() {
+    const recentDiv = document.getElementById('recentAppointments');
+    
+    // Get today's date in local timezone (YYYY-MM-DD format)
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    
+    // Filter appointments based on current filter
+    let filteredAppointments = [];
+    let sectionTitle = '';
+    
+    switch(appointmentViewFilter) {
+        case 'today':
+            filteredAppointments = currentAppointments.filter(a => a.date === today);
+            sectionTitle = "Today's Queue";
+            break;
+        case 'past':
+            filteredAppointments = currentAppointments.filter(a => a.date < today);
+            sectionTitle = 'Past Appointments';
+            break;
+        case 'future':
+            filteredAppointments = currentAppointments.filter(a => a.date > today);
+            sectionTitle = 'Upcoming Appointments';
+            break;
+        default:
+            filteredAppointments = currentAppointments.filter(a => a.date === today);
+            sectionTitle = "Today's Queue";
     }
+    
+    // Count appointments for each filter
+    const todayCount = currentAppointments.filter(a => a.date === today).length;
+    const pastCount = currentAppointments.filter(a => a.date < today).length;
+    const futureCount = currentAppointments.filter(a => a.date > today).length;
+    
+    // Generate filter buttons HTML
+    let filterButtonsHtml = `
+        <div class="appointment-filter-buttons" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+            <button class="filter-btn ${appointmentViewFilter === 'today' ? 'active' : ''}" 
+                    data-filter="today" onclick="setAppointmentFilter('today')"
+                    style="padding: 10px 20px; border: 2px solid #2563eb; border-radius: 8px; background: ${appointmentViewFilter === 'today' ? '#2563eb' : 'white'}; color: ${appointmentViewFilter === 'today' ? 'white' : '#2563eb'}; cursor: pointer; font-weight: 500; transition: all 0.3s;">
+                <i class="fas fa-calendar-day"></i> Today's Queue (${todayCount})
+            </button>
+            <button class="filter-btn ${appointmentViewFilter === 'past' ? 'active' : ''}" 
+                    data-filter="past" onclick="setAppointmentFilter('past')"
+                    style="padding: 10px 20px; border: 2px solid #6b7280; border-radius: 8px; background: ${appointmentViewFilter === 'past' ? '#6b7280' : 'white'}; color: ${appointmentViewFilter === 'past' ? 'white' : '#6b7280'}; cursor: pointer; font-weight: 500; transition: all 0.3s;">
+                <i class="fas fa-history"></i> Past Appointments (${pastCount})
+            </button>
+            <button class="filter-btn ${appointmentViewFilter === 'future' ? 'active' : ''}" 
+                    data-filter="future" onclick="setAppointmentFilter('future')"
+                    style="padding: 10px 20px; border: 2px solid #10b981; border-radius: 8px; background: ${appointmentViewFilter === 'future' ? '#10b981' : 'white'}; color: ${appointmentViewFilter === 'future' ? 'white' : '#10b981'}; cursor: pointer; font-weight: 500; transition: all 0.3s;">
+                <i class="fas fa-calendar-alt"></i> Future Appointments (${futureCount})
+            </button>
+        </div>
+        <h3 style="margin-bottom: 15px; color: #333;">${sectionTitle}</h3>
+    `;
+    
+    if (filteredAppointments.length === 0) {
+        recentDiv.innerHTML = filterButtonsHtml + `
+            <div style="text-align: center; padding: 40px; color: #6b7280;">
+                <i class="fas fa-calendar-times" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i>
+                <p style="font-size: 1.1em;">No ${appointmentViewFilter === 'today' ? "appointments for today" : appointmentViewFilter === 'past' ? "past appointments" : "upcoming appointments"}</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Group appointments by doctor
+    const groupedByDoctor = {};
+    filteredAppointments.forEach(appt => {
+        if (!groupedByDoctor[appt.doctorName]) {
+            groupedByDoctor[appt.doctorName] = [];
+        }
+        groupedByDoctor[appt.doctorName].push(appt);
+    });
+
+    // Sort appointments within each doctor group by queue number or time
+    Object.keys(groupedByDoctor).forEach(doctorName => {
+        groupedByDoctor[doctorName].sort((a, b) => {
+            // Sort by date first, then by time
+            if (a.date !== b.date) return a.date.localeCompare(b.date);
+            return (a.time || '').localeCompare(b.time || '');
+        });
+    });
+
+    // Generate HTML with doctor headers and doctor-specific queue numbers
+    let html = filterButtonsHtml;
+    Object.entries(groupedByDoctor).forEach(([doctorName, appointments]) => {
+        html += `
+            <div class="doctor-section" style="margin-bottom: 30px;">
+                <div class="doctor-section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #2563eb;">
+                    <h3 style="margin: 0; color: #2563eb; font-size: 1.2em;">
+                        <i class="fas fa-user-md" style="margin-right: 8px;"></i>${doctorName}
+                        <span style="font-size: 0.8em; color: #6b7280; margin-left: 10px;">(${appointments.length} patient${appointments.length > 1 ? 's' : ''})</span>
+                    </h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-outline" onclick="viewDoctorPatients('${doctorName}')" 
+                                style="padding: 8px 16px; font-size: 0.9em;">
+                            <i class="fas fa-users"></i> View Patients
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteDoctoAppointments('${doctorName}')" 
+                                style="padding: 8px 16px; font-size: 0.9em; background: #ef4444; color: white;">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+                <table class="appointments-table" style="margin-bottom: 20px;">
+                    <thead>
+                        <tr>
+                            <th>Queue #</th>
+                            <th>Patient</th>
+                            <th>Time</th>
+                            ${appointmentViewFilter !== 'today' ? '<th>Date</th>' : ''}
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${appointments.map((appt, index) => `
+                            <tr>
+                                <td><strong>#${index + 1}</strong></td>
+                                <td>${appt.patientName}</td>
+                                <td>${appt.time || 'N/A'}</td>
+                                ${appointmentViewFilter !== 'today' ? `<td>${appt.date}</td>` : ''}
+                                <td><span class="badge ${appt.status === 'confirmed' ? 'badge-success' : appt.status === 'completed' ? 'badge-info' : 'badge-warning'}">${appt.status}</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    });
+    
+    recentDiv.innerHTML = html;
 }
 
 function switchTab(tabName) {
@@ -602,4 +691,197 @@ async function deleteDoctoAppointments(doctorName) {
 function logout() {
     localStorage.removeItem('token');
     window.location.href = '/provider-auth.html';
+}
+
+// Walk-in Patient Functions
+function openWalkInModal() {
+    const modal = document.getElementById('walkInModal');
+    const form = document.getElementById('walkInForm');
+    form.reset();
+    
+    // Hide any previous messages
+    document.getElementById('walkInError').style.display = 'none';
+    document.getElementById('walkInSuccess').style.display = 'none';
+    document.getElementById('queueInfo').textContent = '';
+    
+    // Populate doctors dropdown
+    const doctorSelect = document.getElementById('walkInDoctor');
+    doctorSelect.innerHTML = '<option value="">-- Select a Doctor --</option>';
+    currentDoctors.forEach(doctor => {
+        doctorSelect.innerHTML += `<option value="${doctor._id}">${doctor.name} - ${doctor.specialty} (₹${doctor.consultationFee})</option>`;
+    });
+    
+    // Set minimum date to today
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    document.getElementById('walkInDate').min = todayStr;
+    document.getElementById('walkInDate').value = todayStr;
+    
+    // Reset time slot dropdown
+    document.getElementById('walkInTimeSlot').innerHTML = '<option value="">-- Select date and doctor first --</option>';
+    
+    modal.classList.add('active');
+    
+    // Load time slots if doctor is already selected
+    loadDoctorTimeSlots();
+}
+
+function closeWalkInModal() {
+    document.getElementById('walkInModal').classList.remove('active');
+}
+
+async function loadDoctorTimeSlots() {
+    const doctorId = document.getElementById('walkInDoctor').value;
+    const date = document.getElementById('walkInDate').value;
+    const timeSlotSelect = document.getElementById('walkInTimeSlot');
+    const queueInfo = document.getElementById('queueInfo');
+    
+    if (!doctorId || !date) {
+        timeSlotSelect.innerHTML = '<option value="">-- Select date and doctor first --</option>';
+        queueInfo.textContent = '';
+        return;
+    }
+    
+    try {
+        timeSlotSelect.innerHTML = '<option value="">Loading slots...</option>';
+        
+        const response = await fetch(`${API_BASE}/doctor-available-slots/${doctorId}?date=${date}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to load time slots');
+        }
+        
+        const data = await response.json();
+        
+        if (data.availableSlots.length === 0) {
+            timeSlotSelect.innerHTML = '<option value="">No slots available on this day</option>';
+            queueInfo.textContent = data.message || 'Doctor is not available on this day';
+            return;
+        }
+        
+        // Populate time slots with queue information
+        timeSlotSelect.innerHTML = '<option value="">-- Select a time slot --</option>';
+        data.availableSlots.forEach(slot => {
+            const queueNum = slot.nextQueueNumber;
+            timeSlotSelect.innerHTML += `<option value="${slot.time}" data-queue="${queueNum}">${slot.time} (Queue #${queueNum})</option>`;
+        });
+        
+        queueInfo.textContent = `Doctor: ${data.doctorName}`;
+        
+        // Update queue info when time slot changes
+        timeSlotSelect.onchange = function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.dataset.queue) {
+                queueInfo.textContent = `This patient will be Queue #${selectedOption.dataset.queue} for the selected time slot`;
+            }
+        };
+        
+    } catch (error) {
+        console.error('Error loading time slots:', error);
+        timeSlotSelect.innerHTML = '<option value="">Error loading slots</option>';
+        queueInfo.textContent = 'Failed to load available slots. Please try again.';
+    }
+}
+
+async function registerWalkInPatient(event) {
+    event.preventDefault();
+    
+    const errorDiv = document.getElementById('walkInError');
+    const successDiv = document.getElementById('walkInSuccess');
+    errorDiv.style.display = 'none';
+    successDiv.style.display = 'none';
+    
+    const patientName = document.getElementById('walkInPatientName').value.trim();
+    const patientPhone = document.getElementById('walkInPatientPhone').value.trim();
+    const doctorId = document.getElementById('walkInDoctor').value;
+    const date = document.getElementById('walkInDate').value;
+    const time = document.getElementById('walkInTimeSlot').value;
+    const notes = document.getElementById('walkInNotes').value.trim();
+    
+    // Validate
+    if (!patientName || !patientPhone || !doctorId || !date || !time) {
+        errorDiv.textContent = 'Please fill in all required fields';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    // Validate phone number (10 digits)
+    if (!/^\d{10}$/.test(patientPhone)) {
+        errorDiv.textContent = 'Please enter a valid 10-digit phone number';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    try {
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
+        
+        const response = await fetch(`${API_BASE}/provider-appointments/walk-in`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                doctorId,
+                patientName,
+                patientPhone,
+                date,
+                time,
+                notes: notes || 'Walk-in patient'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to register walk-in patient');
+        }
+        
+        // Show success message
+        successDiv.innerHTML = `
+            <strong>Walk-in patient registered successfully!</strong><br>
+            Patient: ${data.appointment.patientName}<br>
+            Queue Number: <strong>#${data.appointment.queueNumber}</strong><br>
+            Doctor: ${data.appointment.doctorName}<br>
+            Time: ${data.appointment.time}
+        `;
+        successDiv.style.display = 'block';
+        
+        // Reset form for next patient
+        document.getElementById('walkInPatientName').value = '';
+        document.getElementById('walkInPatientPhone').value = '';
+        document.getElementById('walkInNotes').value = '';
+        
+        // Refresh time slots to get updated queue numbers
+        await loadDoctorTimeSlots();
+        
+        // Reload appointments in the background
+        await loadAppointments();
+        await loadStats();
+        
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Register Walk-in Patient';
+        
+        // Auto-close after 3 seconds if successful
+        setTimeout(() => {
+            if (successDiv.style.display === 'block') {
+                closeWalkInModal();
+            }
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Error registering walk-in patient:', error);
+        errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+        
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Register Walk-in Patient';
+    }
 }
