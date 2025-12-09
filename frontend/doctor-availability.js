@@ -427,7 +427,7 @@ async function generateTimeSlots() {
     
     // Fetch real appointments for this doctor on this date
     try {
-        const dateString = selectedDate.toISOString().split('T')[0];
+        const dateString = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
         const doctorId = currentDoctor._id || currentDoctor.id;
         const response = await fetch(`${API_BASE}/doctor-appointments/${doctorId}?date=${dateString}`);
         const appointments = response.ok ? await response.json() : [];
@@ -591,7 +591,7 @@ async function confirmBooking() {
             },
             body: JSON.stringify({
                 doctorId: doctorId,
-                date: selectedDate.toISOString().split('T')[0],
+                date: `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`,
                 time: selectedTimeSlot.time,
                 notes: ''
             })
