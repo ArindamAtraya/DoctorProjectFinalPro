@@ -61,13 +61,27 @@ window.showNotification = showNotification;
 window.showModal = showModal;
 window.closeAllModals = closeAllModals;
 
-// Initialize Application
-document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
-    setupEventListeners();
-    loadInitialData();
-    initializeMobileFeatures();
-});
+    // Initialize Application
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeApp();
+        setupEventListeners();
+        loadInitialData();
+        initializeMobileFeatures();
+        
+        // Setup specialty filter listener
+        if (elements.specialtyFilter) {
+            elements.specialtyFilter.addEventListener('change', filterDoctors);
+        }
+        
+        // Setup search form listener
+        const searchForm = document.getElementById('searchFilterForm');
+        if (searchForm) {
+            searchForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                findDoctorAvailability();
+            });
+        }
+    });
 
 // Demo accounts removed - all authentication now goes through backend
 
@@ -594,17 +608,19 @@ function filterDoctors() {
     const specialty = elements.specialtyFilter ? elements.specialtyFilter.value : '';
     const hospital = elements.hospitalFilter ? elements.hospitalFilter.value : '';
 
+    console.log('Filtering doctors:', { specialty, hospital });
+
     let filteredDoctors = doctors;
 
     if (specialty) {
         filteredDoctors = filteredDoctors.filter(doctor => 
-            doctor.specialty.toLowerCase().includes(specialty.toLowerCase())
+            doctor.specialty && doctor.specialty.toLowerCase().includes(specialty.toLowerCase())
         );
     }
 
     if (hospital) {
         filteredDoctors = filteredDoctors.filter(doctor => 
-            doctor.hospital.toLowerCase().includes(hospital.toLowerCase())
+            doctor.hospital && doctor.hospital.toLowerCase().includes(hospital.toLowerCase())
         );
     }
 
