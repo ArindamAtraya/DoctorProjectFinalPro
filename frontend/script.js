@@ -159,6 +159,41 @@ function setupEventListeners() {
         });
     });
 
+    // Navigation Links
+    document.querySelectorAll('.nav-links a').forEach(link => {
+        link.addEventListener('click', (e) => {
+            const href = link.getAttribute('href');
+            console.log('Nav link clicked:', href);
+            
+            // Handle internal section links
+            if (href.startsWith('#')) {
+                e.preventDefault();
+                const sectionId = href.substring(1);
+                
+                // Update active state
+                document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+
+                // Special handling for dashboard tabs (doctors, hospitals, tests)
+                if (['doctors', 'hospitals', 'tests', 'pharmacies'].includes(sectionId)) {
+                    switchTab(sectionId);
+                    // Scroll to tabs section
+                    const tabsElement = document.querySelector('.tabs');
+                    if (tabsElement) {
+                        tabsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                } else if (sectionId === 'contact') {
+                    const contactElement = document.getElementById('contact');
+                    if (contactElement) {
+                        contactElement.scrollIntoView({ behavior: 'smooth' });
+                    }
+                } else if (sectionId === '' || sectionId === 'home') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+        });
+    });
+
     // Modal controls
     elements.loginBtn.addEventListener('click', () => showModal('loginModal'));
     elements.signupBtn.addEventListener('click', () => showModal('signupModal'));

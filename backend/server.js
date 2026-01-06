@@ -1044,13 +1044,13 @@ function generateTimeSlotsFromHours(startTime, endTime) {
     const [endHour, endMin] = endTime.split(':').map(Number);
     
     let currentHour = startHour;
-    let currentMin = startMin;
+    let currentMin = 0; // Fixed: Start from the beginning of the hour
     
-    while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
+    while (currentHour < endHour || (currentHour === endHour && currentMin <= endMin)) {
         const timeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMin).padStart(2, '0')}`;
         slots.push(timeStr);
         
-        currentMin += 30;
+        currentMin += 60; // Fixed: Use hourly slots
         if (currentMin >= 60) {
             currentMin = 0;
             currentHour++;
