@@ -644,6 +644,7 @@ app.post('/api/doctors/:id/slots', authenticateToken, requireProvider, async (re
     }
 });
 
+// Create appointment (updated to handle queue numbering consistently)
 app.post('/api/appointments', authenticateToken, async (req, res) => {
     const maxRetries = 5;
     let retries = 0;
@@ -672,25 +673,13 @@ app.post('/api/appointments', authenticateToken, async (req, res) => {
                 return res.status(404).json({ error: 'Patient not found' });
             }
 
-            const maxQueueResult = await Appointment.aggregate([
-                {
-                    $match: {
-                        doctorId: doctor._id,
-                        date: date,
-                        time: time
-                    }
-                },
-                {
-                    $group: {
-                        _id: null,
-                        maxQueue: { $max: '$queueNumber' }
-                    }
-                }
-            ]);
+            // Get total count of appointments for this doctor on this date to assign next queue number
+            const count = await Appointment.countDocuments({
+                doctorId: doctor._id,
+                date: date
+            });
 
-            const queueNumber = maxQueueResult.length > 0 && maxQueueResult[0].maxQueue
-                ? maxQueueResult[0].maxQueue + 1
-                : 1;
+            const queueNumber = count + 1;
 
             const appointment = new Appointment({
                 doctorId: doctor._id,
@@ -735,6 +724,38 @@ app.post('/api/appointments', authenticateToken, async (req, res) => {
     }
     
     res.status(500).json({ error: 'Failed to book appointment after multiple attempts' });
+});
+
+// Update appointment status or cancel (updated to reorder queue numbers upon cancellation)
+app.put('/api/appointments/:id/cancel', authenticateToken, async (req, res) => {
+    try {
+        const appointment = await Appointment.findById(req.params.id);
+        if (!appointment) {
+            return res.status(404).json({ error: 'Appointment not found' });
+        }
+
+        const { doctorId, date } = appointment;
+
+        // Instead of just marking as cancelled, we remove it to keep the queue clean
+        await Appointment.findByIdAndDelete(req.params.id);
+
+        // Reorder queue numbers for remaining appointments for this doctor on this date
+        const remainingAppointments = await Appointment.find({ 
+            doctorId, 
+            date,
+            status: { $ne: 'cancelled' } 
+        }).sort({ createdAt: 1 });
+        
+        for (let i = 0; i < remainingAppointments.length; i++) {
+            remainingAppointments[i].queueNumber = i + 1;
+            await remainingAppointments[i].save();
+        }
+
+        res.json({ message: 'Appointment cancelled and removed from queue successfully' });
+    } catch (error) {
+        console.error('Cancel appointment error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 app.get('/api/appointments/:id', authenticateToken, async (req, res) => {
@@ -869,27 +890,13 @@ app.post('/api/provider-appointments/walk-in', authenticateToken, requireProvide
                 return res.status(403).json({ error: 'This doctor does not belong to your facility' });
             }
 
-            // Get the next queue number for this doctor, date, and time slot
-            // This uses the SAME logic as online bookings to ensure synchronization
-            const maxQueueResult = await Appointment.aggregate([
-                {
-                    $match: {
-                        doctorId: doctor._id,
-                        date: date,
-                        time: time
-                    }
-                },
-                {
-                    $group: {
-                        _id: null,
-                        maxQueue: { $max: '$queueNumber' }
-                    }
-                }
-            ]);
+            // Get the next queue number for this doctor and date (consistently across slots)
+            const count = await Appointment.countDocuments({
+                doctorId: doctor._id,
+                date: date
+            });
 
-            const queueNumber = maxQueueResult.length > 0 && maxQueueResult[0].maxQueue
-                ? maxQueueResult[0].maxQueue + 1
-                : 1;
+            const queueNumber = count + 1;
 
             // Create the walk-in appointment
             const appointment = new Appointment({

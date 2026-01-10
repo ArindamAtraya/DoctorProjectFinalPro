@@ -1,4 +1,5 @@
 const API_BASE = 'http://localhost:5000/api';
+
 let currentUser = null;
 let allAppointments = [];
 let currentFilter = 'all';
