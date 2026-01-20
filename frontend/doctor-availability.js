@@ -82,58 +82,53 @@ async function initializeDoctorAvailability() {
         currentDoctor = await response.json();
         console.log('✅ Doctor loaded:', currentDoctor);
         
-        // Update doctor info with animation
-        setTimeout(() => {
-            document.getElementById('doctorName').textContent = currentDoctor.name;
-            document.getElementById('doctorSpecialty').textContent = currentDoctor.specialty;
-            
-            // Update provider info
-            const providerName = currentDoctor.providerName || currentDoctor.hospital || 'Healthcare Provider';
-            const providerType = currentDoctor.providerType || 'healthcare';
-            const providerTypeLabel = providerType.charAt(0).toUpperCase() + providerType.slice(1);
-            const providerDistrict = currentDoctor.providerDistrict || 'N/A';
-            const providerState = currentDoctor.providerState || '';
-            const providerAddress = currentDoctor.providerAddress || 'N/A';
-            
-            // Set provider name and type (with null checks)
-            const providerNameEl = document.getElementById('providerName');
-            const providerTypeEl = document.getElementById('providerType');
-            if (providerNameEl) providerNameEl.textContent = providerName;
-            if (providerTypeEl) providerTypeEl.textContent = ` (${providerTypeLabel})`;
-            
-            // Set provider icon based on type
-            const providerIconEl = document.getElementById('providerIcon');
-            if (providerIconEl) {
-                if (providerType === 'hospital') {
-                    providerIconEl.className = 'fas fa-hospital';
-                } else if (providerType === 'clinic') {
-                    providerIconEl.className = 'fas fa-clinic-medical';
-                } else {
-                    providerIconEl.className = 'fas fa-prescription-bottle-alt';
+            // Update doctor info with animation
+            setTimeout(() => {
+                document.getElementById('doctorName').textContent = currentDoctor.name;
+                document.getElementById('doctorSpecialty').textContent = currentDoctor.specialty;
+                
+                // Update provider info
+                const providerName = currentDoctor.providerName || currentDoctor.hospital || 'Healthcare Provider';
+                const providerType = currentDoctor.providerType || 'healthcare';
+                const providerTypeLabel = providerType.charAt(0).toUpperCase() + providerType.slice(1);
+                const providerDistrict = currentDoctor.providerDistrict || 'N/A';
+                const providerAddress = currentDoctor.providerAddress || 'N/A';
+                
+                // Set provider name and type (with null checks)
+                const providerNameEl = document.getElementById('providerName');
+                const providerTypeEl = document.getElementById('providerType');
+                if (providerNameEl) providerNameEl.textContent = providerName;
+                if (providerTypeEl) providerTypeEl.textContent = ` (${providerTypeLabel})`;
+                
+                // Set provider icon based on type
+                const providerIconEl = document.getElementById('providerIcon');
+                if (providerIconEl) {
+                    if (providerType === 'hospital') {
+                        providerIconEl.className = 'fas fa-hospital';
+                    } else if (providerType === 'clinic') {
+                        providerIconEl.className = 'fas fa-clinic-medical';
+                    } else if (providerType === 'physio') {
+                        providerIconEl.className = 'fas fa-hands-helping';
+                    } else {
+                        providerIconEl.className = 'fas fa-prescription-bottle-alt';
+                    }
                 }
-            }
-            
-            // Set location with district and state
-            const locationText = providerState && providerState !== 'N/A' ? 
-                `${providerDistrict}, ${providerState}` : providerDistrict;
-            const providerDistrictEl = document.getElementById('providerDistrict');
-            if (providerDistrictEl) providerDistrictEl.textContent = locationText;
-            
-            // Set address
-            const providerAddressEl = document.getElementById('providerAddress');
-            if (providerAddressEl) providerAddressEl.textContent = providerAddress;
-            
-            // Hide address section if not available
-            const doctorAddressEl = document.getElementById('doctorAddress');
-            if (doctorAddressEl && (providerAddress === 'N/A' || !providerAddress)) {
-                doctorAddressEl.style.display = 'none';
-            }
-            
-            document.getElementById('doctorRating').textContent = currentDoctor.rating || '4.5';
-            
-            // Add entrance animation
-            document.querySelector('.doctor-header').style.animation = 'slideUp 0.6s ease';
-        }, 300);
+                
+                // Set location
+                const providerDistrictEl = document.getElementById('providerDistrict');
+                if (providerDistrictEl) providerDistrictEl.textContent = providerDistrict;
+                
+                // Set address
+                const providerAddressEl = document.getElementById('providerAddress');
+                if (providerAddressEl) providerAddressEl.textContent = providerAddress;
+                
+                // Hide rating/reviews section as requested
+                const ratingSection = document.querySelector('.rating-container') || document.querySelector('.doctor-rating');
+                if (ratingSection) ratingSection.style.display = 'none';
+                
+                // Add entrance animation
+                document.querySelector('.doctor-header').style.animation = 'slideUp 0.6s ease';
+            }, 300);
     } catch (error) {
         console.error('Error loading doctor:', error);
         document.getElementById('doctorName').textContent = 'Error loading doctor';

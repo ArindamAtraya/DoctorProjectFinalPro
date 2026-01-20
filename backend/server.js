@@ -55,6 +55,13 @@ const upload = multer({ storage: storage });
 
 app.use(cors());
 app.use(express.json());
+
+// Force style.css to be served with correct MIME type
+app.get('/style.css', (req, res) => {
+    res.setHeader('Content-Type', 'text/css');
+    res.sendFile(path.join(__dirname, '../frontend/style.css'));
+});
+
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/uploads', express.static(path.join(__dirname, '../frontend/uploads')));
 
@@ -76,7 +83,7 @@ function authenticateToken(req, res, next) {
 }
 
 function requireProvider(req, res, next) {
-    if (!['pharmacy', 'clinic', 'hospital'].includes(req.user.role)) {
+    if (!['pharmacy', 'clinic', 'hospital', 'physio'].includes(req.user.role)) {
         return res.status(403).json({ error: 'Access denied. Provider role required.' });
     }
     next();
@@ -93,7 +100,8 @@ function getDefaultFacilities(providerType) {
     const facilities = {
         pharmacy: ['Pharmacy', 'Basic Consultation', 'Medicine Delivery'],
         clinic: ['Consultation', 'Minor Procedures', 'Vaccination', 'Lab Tests'],
-        hospital: ['Emergency', 'ICU', 'Pharmacy', 'Lab', 'Surgery', 'Radiology']
+        hospital: ['Emergency', 'ICU', 'Pharmacy', 'Lab', 'Surgery', 'Radiology'],
+        physio: ['General Physiotherapy', 'Orthopedic Rehab', 'Sports Injury', 'Neurological Physio']
     };
     return facilities[providerType] || ['Healthcare Services'];
 }
@@ -153,7 +161,7 @@ app.post('/api/auth/register', async (req, res) => {
         await user.save();
         console.log('✅ User created:', { id: user._id, email: user.email, role: user.role });
 
-        if (['pharmacy', 'clinic', 'hospital'].includes(role)) {
+        if (['pharmacy', 'clinic', 'hospital', 'physio'].includes(role)) {
             const provider = new HealthcareProvider({
                 userId: user._id,
                 name: providerInfo.facilityName,
@@ -344,11 +352,12 @@ app.get('/api/all-doctors-with-providers', async (req, res) => {
                         providerDistrict: doctor.providerId.district,
                         providerAddress: doctor.providerId.address,
                         providerPhone: doctor.providerId.phone,
-                        doctors: []
+                        doctors: [],
+                        services: [] // Added for physio clinics
                     };
                 }
                 
-                grouped[key].doctors.push({
+                const doctorData = {
                     id: doctor._id,
                     name: doctor.name,
                     specialty: doctor.specialty,
@@ -356,7 +365,13 @@ app.get('/api/all-doctors-with-providers', async (req, res) => {
                     experience: doctor.experience,
                     consultationFee: doctor.consultationFee,
                     photo: doctor.photo || '/uploads/default-doctor.png'
-                });
+                };
+
+                if (doctor.providerId.type === 'physio') {
+                    grouped[key].services.push(doctorData);
+                } else {
+                    grouped[key].doctors.push(doctorData);
+                }
             }
         });
         
@@ -405,7 +420,7 @@ app.get('/api/doctors/:id', async (req, res) => {
 
 app.get('/api/healthcare-providers', async (req, res) => {
     try {
-        const { type, search } = req.query;
+        const { type, location, specialty } = req.query;
         
         let query = {};
 
@@ -413,12 +428,11 @@ app.get('/api/healthcare-providers', async (req, res) => {
             query.type = type.toLowerCase();
         }
 
-        if (search) {
+        if (location) {
             query.$or = [
-                { name: new RegExp(search, 'i') },
-                { district: new RegExp(search, 'i') },
-                { state: new RegExp(search, 'i') },
-                { address: new RegExp(search, 'i') }
+                { district: new RegExp(location, 'i') },
+                { state: new RegExp(location, 'i') },
+                { address: new RegExp(location, 'i') }
             ];
         }
 
@@ -816,6 +830,24 @@ app.get('/api/my-appointments', authenticateToken, async (req, res) => {
         res.json(appointments);
     } catch (error) {
         console.error('Get appointments error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/doctor-appointments/:id', async (req, res) => {
+    try {
+        const { date } = req.query;
+        const doctorId = req.params.id;
+        
+        const query = { doctorId };
+        if (date) {
+            query.date = date;
+        }
+        
+        const appointments = await Appointment.find(query);
+        res.json(appointments);
+    } catch (error) {
+        console.error('Error fetching doctor appointments:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

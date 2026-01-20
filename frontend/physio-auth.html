@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#10b981">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Physio Clinic Portal - HealthConnect</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --provider-primary: #10b981;
+            --provider-primary-light: #34d399;
+            --provider-primary-dark: #059669;
+            --provider-secondary: #2563eb;
+            --provider-accent: #8b5cf6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .auth-card {
+            background: white;
+            border-radius: 20px;
+            padding: clamp(25px, 5vw, 40px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--provider-primary), var(--provider-secondary));
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: clamp(20px, 4vw, 30px);
+        }
+
+        .auth-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: clamp(1.5rem, 4vw, 1.8rem);
+            font-weight: 700;
+            color: var(--provider-primary);
+            margin-bottom: 8px;
+        }
+
+        .auth-subtitle {
+            color: #64748b;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: clamp(20px, 4vw, 25px);
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            text-align: center;
+            padding: clamp(10px, 3vw, 14px);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+            color: #64748b;
+        }
+
+        .auth-tab.active {
+            background: linear-gradient(135deg, var(--provider-primary), var(--provider-primary-dark));
+            color: white;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .auth-tab:hover:not(.active) {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--provider-primary);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(10px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        .form-group {
+            margin-bottom: clamp(15px, 3vw, 20px);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: clamp(12px, 3vw, 16px);
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-control:focus {
+            border-color: var(--provider-primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .btn {
+            padding: clamp(12px, 3vw, 16px) clamp(20px, 4vw, 25px);
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--provider-primary), var(--provider-primary-dark));
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--provider-primary-dark), #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--provider-primary);
+            color: var(--provider-primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--provider-primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .back-to-home {
+            text-align: center;
+            margin-top: clamp(20px, 4vw, 25px);
+            padding-top: clamp(15px, 3vw, 20px);
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .facility-preview {
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+            padding: clamp(12px, 3vw, 15px);
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+            border-left: 4px solid var(--provider-primary);
+            border: 1px solid #a7f3d0;
+        }
+
+        .facility-preview.active {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .preview-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--provider-primary-dark);
+            font-size: clamp(1rem, 3vw, 1.1rem);
+        }
+
+        .preview-details {
+            font-size: clamp(0.8rem, 3vw, 0.9rem);
+            color: #475569;
+            line-height: 1.5;
+        }
+
+        .preview-details div {
+            margin-bottom: 4px;
+        }
+
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+                align-items: flex-start;
+                min-height: 100vh;
+                height: auto;
+            }
+
+            .auth-container {
+                max-width: 100%;
+            }
+
+            .auth-card {
+                border-radius: 15px;
+                padding: 25px 20px;
+            }
+
+            .auth-tabs {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .auth-tab {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <i class="fas fa-hand-holding-medical"></i>
+                    <span>HealthConnect</span>
+                </div>
+                <div class="auth-subtitle">Physio Clinic Portal</div>
+            </div>
+
+            <!-- Auth Tabs -->
+            <div class="auth-tabs">
+                <div class="auth-tab active" data-tab="login">Login</div>
+                <div class="auth-tab" data-tab="signup">Register</div>
+            </div>
+
+            <!-- Login Form -->
+            <form id="physioLoginForm" class="auth-form active">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" class="form-control" id="physioLoginEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" id="physioLoginPassword" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Login as Physio Clinic</span>
+                </button>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="physioSignupForm" class="auth-form">
+                <div class="form-group">
+                    <label>Clinic Name *</label>
+                    <input type="text" class="form-control" id="facilityName" placeholder="Enter clinic name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address *</label>
+                    <input type="email" class="form-control" id="physioSignupEmail" placeholder="Enter clinic email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password *</label>
+                    <input type="password" class="form-control" id="physioSignupPassword" placeholder="Create a password" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" class="form-control" id="physioPhone" placeholder="Enter clinic phone number" required>
+                </div>
+                <div class="form-group">
+                    <label>Registration Number *</label>
+                    <input type="text" class="form-control" id="registrationNumber" placeholder="Enter registration/license number" required>
+                </div>
+                <div class="form-group">
+                    <label>Address *</label>
+                    <textarea class="form-control" id="facilityAddress" rows="3" placeholder="Enter full clinic address" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>District *</label>
+                    <input type="text" class="form-control" id="facilityDistrict" placeholder="Enter district" required>
+                </div>
+                <div class="form-group">
+                    <label>State *</label>
+                    <input type="text" class="form-control" id="facilityState" placeholder="Enter state" required>
+                </div>
+
+                <!-- Facility Preview -->
+                <div class="facility-preview" id="facilityPreview">
+                    <div class="preview-title" id="previewFacilityName">Your Clinic Name</div>
+                    <div class="preview-details">
+                        <div id="previewFacilityType">Physio Clinic</div>
+                        <div id="previewFacilityAddress">Your clinic address will appear here</div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="margin-top: 20px;">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Register Clinic</span>
+                </button>
+            </form>
+
+            <div class="back-to-home">
+                <a href="index.html" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Home</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="physio-auth.js"></script>
+</body>
+</html>

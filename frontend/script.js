@@ -21,6 +21,8 @@ const elements = {
     searchFilterModal: document.getElementById('searchFilterModal'),
     resultsModal: document.getElementById('resultsModal'),
     locationModal: document.getElementById('locationModal'),
+    physioModal: document.getElementById('physioModal'),
+    physioResultsModal: document.getElementById('physioResultsModal'),
     providersModal: document.getElementById('providersModal'),
     doctorsModal: document.getElementById('doctorsModal'),
     loginForm: document.getElementById('loginForm'),
@@ -28,6 +30,7 @@ const elements = {
     bookingForm: document.getElementById('bookingForm'),
     searchFilterForm: document.getElementById('searchFilterForm'),
     locationForm: document.getElementById('locationForm'),
+    physioLocationForm: document.getElementById('physioLocationForm'),
     doctorsContainer: document.getElementById('doctors-container'),
     hospitalsContainer: document.getElementById('hospitals-container'),
     pharmaciesContainer: document.getElementById('pharmacies-container'),
@@ -36,6 +39,7 @@ const elements = {
     hospitalFilter: document.getElementById('hospitalFilter'),
     globalSearch: document.getElementById('globalSearch'),
     providersContainer: document.getElementById('providersContainer'),
+    physioResultsContainer: document.getElementById('physioResultsContainer'),
     doctorsListContainer: document.getElementById('doctorsContainer')
 };
 
@@ -47,6 +51,8 @@ window.closeQueueInfo = closeQueueInfo;
 window.viewHospitalDoctors = viewHospitalDoctors;
 window.openSearchFilter = openSearchFilter;
 window.openLocationModal = openLocationModal;
+window.openPhysioModal = openPhysioModal;
+window.findPhysioClinics = findPhysioClinics;
 window.bookAppointmentFromSearch = bookAppointmentFromSearch;
 window.viewLocationDetails = viewLocationDetails;
 window.getDirections = getDirections;
@@ -234,6 +240,14 @@ function setupEventListeners() {
         elements.locationForm.addEventListener('submit', function(e) {
             e.preventDefault();
             findHealthcareProviders();
+        });
+    }
+
+    // Physio location form submission
+    if (elements.physioLocationForm) {
+        elements.physioLocationForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            findPhysioClinics();
         });
     }
     
@@ -1160,6 +1174,112 @@ function viewLocationDetails(locationId) {
     }
 }
 
+async function findPhysioClinics() {
+    const location = document.getElementById('physioLocation').value;
+
+    if (!location) {
+        showNotification('Please enter a location', 'info');
+        return;
+    }
+
+    try {
+        // Fetch from the API that returns providers with their services/doctors
+        const data = await apiCall('/all-doctors-with-providers');
+        
+        if (!data || data.length === 0) {
+            showNotification(`No healthcare providers found`, 'info');
+            return;
+        }
+
+        // Filter for physio clinics in the specified location
+        const filteredClinics = data.filter(provider => {
+            if (provider.providerType !== 'physio') return false;
+            
+            const locationLower = location.toLowerCase();
+            const provDistrict = (provider.providerDistrict || '').toLowerCase();
+            const provAddress = (provider.providerAddress || '').toLowerCase();
+            const provName = (provider.providerName || '').toLowerCase();
+            
+            return provDistrict.includes(locationLower) || 
+                   provAddress.includes(locationLower) ||
+                   provName.includes(locationLower);
+        });
+
+        const container = elements.physioResultsContainer;
+        const title = document.getElementById('physioResultsTitle');
+        
+        if (title) title.textContent = `Physiotherapy Clinics in ${location}`;
+        if (container) {
+            container.innerHTML = '';
+
+            if (filteredClinics.length === 0) {
+                container.innerHTML = `<div class="no-results" style="text-align: center; padding: 40px 20px;">
+                    <i class="fas fa-search" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 15px;"></i>
+                    <p>No physiotherapy clinics found in this area.</p>
+                </div>`;
+            } else {
+                filteredClinics.forEach(clinic => {
+                    const card = createPhysioClinicCard(clinic);
+                    container.appendChild(card);
+                });
+            }
+        }
+
+        closeAllModals();
+        showModal('physioResultsModal');
+    } catch (error) {
+        console.error('Error finding physio clinics:', error);
+        showNotification('Failed to find physiotherapy clinics', 'error');
+    }
+}
+
+function createPhysioClinicCard(clinic) {
+    const card = document.createElement('div');
+    card.className = 'provider-result-card';
+    card.style = 'background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee;';
+    
+    // Explicitly use the services array which contains items added via "Add Service" in physio-dashboard
+    const services = clinic.services || [];
+    const servicesHtml = services.length > 0
+        ? `<div style="margin-top: 15px;">
+            <strong style="font-size: 0.95rem; color: #1e293b; display: block; margin-bottom: 10px;">Available Services:</strong>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                ${services.map(s => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 15px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <div>
+                            <span style="font-weight: 600; color: #334155; display: block;">${s.name}</span>
+                            <span style="font-size: 0.8rem; color: #64748b;">${s.specialty || 'Physiotherapy'} · ₹${s.consultationFee || 500}</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="openDoctorAvailability('${s.id || s._id}')" style="padding: 6px 15px; font-size: 0.85rem; border-radius: 8px;">
+                            Book Now
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+           </div>`
+        : `<div style="margin-top: 15px;">
+            <p style="color: #64748b; font-size: 0.9rem; font-style: italic;">No specific services uploaded yet.</p>
+           </div>`;
+
+    card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 5px;">
+            <div>
+                <h4 style="margin: 0 0 5px 0; color: #1e293b; font-size: 1.25rem; font-weight: 700;">${clinic.providerName}</h4>
+                <p style="margin: 0 0 10px 0; color: #64748b; font-size: 0.9rem;"><i class="fas fa-map-marker-alt"></i> ${clinic.providerAddress || clinic.providerDistrict}</p>
+                <div style="display: flex; gap: 15px; color: #64748b; font-size: 0.85rem;">
+                    <span><i class="fas fa-phone"></i> ${clinic.providerPhone || 'N/A'}</span>
+                    <span><i class="fas fa-star" style="color: #fbce1f;"></i> 4.5</span>
+                </div>
+            </div>
+            <button class="btn btn-outline" onclick="viewHospitalDoctors('${clinic.providerId}')" style="white-space: nowrap; padding: 8px 16px; font-size: 0.9rem;">
+                View Clinic
+            </button>
+        </div>
+        ${servicesHtml}
+    `;
+    return card;
+}
+
 function getDirections(address) {
     // Open in Google Maps
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
@@ -1174,6 +1294,10 @@ function clearSearch() {
 // Location-based Healthcare Provider Search
 function openLocationModal() {
     showModal('locationModal');
+}
+
+function openPhysioModal() {
+    showModal('physioModal');
 }
 
 async function findHealthcareProviders() {
@@ -1746,4 +1870,5 @@ function loadMockTests() {
     ];
     renderTests(tests);
 }
+
 
