@@ -820,6 +820,58 @@ app.get('/api/doctor-appointments/:doctorId', async (req, res) => {
     }
 });
 
+// Reschedule appointment
+app.patch('/api/appointments/:id/reschedule', authenticateToken, async (req, res) => {
+    try {
+        const { newDate, newTime } = req.body;
+        const appointmentId = req.params.id;
+
+        if (!newDate || !newTime) {
+            return res.status(400).json({ error: 'New date and time are required' });
+        }
+
+        const appointment = await Appointment.findById(appointmentId);
+        if (!appointment) {
+            return res.status(404).json({ error: 'Appointment not found' });
+        }
+
+        // Check if user owns the appointment
+        if (appointment.patientId.toString() !== req.user.id) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+
+        // Calculate new queue number for the new date/time
+        const appointmentsOnNewDate = await Appointment.find({
+            doctorId: appointment.doctorId,
+            date: newDate,
+            time: newTime,
+            status: { $ne: 'cancelled' }
+        });
+        const newQueueNumber = appointmentsOnNewDate.length + 1;
+
+        // Update appointment
+        appointment.date = newDate;
+        appointment.time = newTime;
+        appointment.queueNumber = newQueueNumber;
+        appointment.status = 'confirmed'; 
+        
+        await appointment.save();
+
+        res.json({
+            message: 'Appointment rescheduled successfully',
+            appointment: {
+                id: appointment._id,
+                date: appointment.date,
+                time: appointment.time,
+                queueNumber: appointment.queueNumber
+            }
+        });
+    } catch (error) {
+        console.error('Reschedule error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 app.get('/api/my-appointments', authenticateToken, async (req, res) => {
     try {
         const appointments = await Appointment.find({ patientId: req.user.id })

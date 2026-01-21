@@ -360,9 +360,150 @@ function showErrorAndRedirect(message) {
     }, 5000);
 }
 
+function openRescheduleModal() {
+    console.log('📅 Opening reschedule modal');
+    const modal = document.getElementById('rescheduleModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        
+        // Set min date to today
+        const dateInput = document.getElementById('newRescheduleDate');
+        if (dateInput) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.min = today;
+            dateInput.value = today;
+            
+            // Add listener to update times when date changes
+            dateInput.onchange = updateRescheduleTimes;
+        }
+        
+        // Initial time update
+        updateRescheduleTimes();
+    }
+}
+
+async function updateRescheduleTimes() {
+    const timeSelect = document.getElementById('newRescheduleTime');
+    const dateInput = document.getElementById('newRescheduleDate');
+    const bookingJSON = localStorage.getItem('currentBooking');
+    
+    if (!timeSelect || !dateInput || !bookingJSON) return;
+    
+    const booking = JSON.parse(bookingJSON);
+    const doctorId = booking.doctorId;
+    const selectedDate = new Date(dateInput.value);
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const selectedDay = dayNames[selectedDate.getDay()];
+    
+    timeSelect.innerHTML = '<option value="">Loading times...</option>';
+    
+    try {
+        // Correct API base for frontend calls if not absolute
+        const baseUrl = window.location.origin + '/api';
+        const response = await fetch(`${baseUrl}/doctors/${doctorId}`);
+        if (!response.ok) throw new Error('Doctor not found');
+        
+        const doctor = await response.json();
+        const dayHours = (doctor.visitingHours || []).find(h => h.day === selectedDay);
+        
+        timeSelect.innerHTML = '';
+        
+        if (!dayHours || !dayHours.startTime || !dayHours.endTime) {
+            timeSelect.innerHTML = '<option value="">No availability on this day</option>';
+            return;
+        }
+        
+        const [startHour, startMin] = dayHours.startTime.split(':').map(Number);
+        const [endHour, endMin] = dayHours.endTime.split(':').map(Number);
+        
+        // Generate slots every hour within the doctor's visiting range
+        for (let h = startHour; h < endHour; h++) {
+            const timeVal = `${h.toString().padStart(2, '0')}:00`;
+            const period = h >= 12 ? 'PM' : 'AM';
+            const displayH = h % 12 || 12;
+            const displayTime = `${displayH}:00 ${period}`;
+            
+            const option = document.createElement('option');
+            option.value = timeVal;
+            option.textContent = displayTime;
+            timeSelect.appendChild(option);
+        }
+        
+        if (timeSelect.options.length === 0) {
+            timeSelect.innerHTML = '<option value="">Doctor not available on this day</option>';
+        }
+    } catch (error) {
+        console.error('Error fetching visiting hours:', error);
+        timeSelect.innerHTML = '<option value="">Error loading times</option>';
+    }
+}
+
+function closeRescheduleModal() {
+    const modal = document.getElementById('rescheduleModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+async function submitReschedule() {
+    const newDate = document.getElementById('newRescheduleDate').value;
+    const newTime = document.getElementById('newRescheduleTime').value;
+    
+    if (!newDate || !newTime) {
+        alert('Please select both date and time');
+        return;
+    }
+
+    const bookingJSON = localStorage.getItem('currentBooking');
+    if (!bookingJSON) {
+        alert('Booking session expired');
+        return;
+    }
+
+    const booking = JSON.parse(bookingJSON);
+    const appointmentId = booking.id;
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+
+    if (!appointmentId || !token) {
+        alert('Authentication error. Please login again.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/appointments/${appointmentId}/reschedule`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ newDate, newTime })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Failed to reschedule');
+        }
+
+        const result = await response.json();
+        
+        // Update local storage and UI
+        booking.date = newDate;
+        booking.time = newTime;
+        booking.queueNumber = result.appointment.queueNumber;
+        localStorage.setItem('currentBooking', JSON.stringify(booking));
+        
+        alert('Appointment successfully rescheduled!');
+        closeRescheduleModal();
+        location.reload(); // Refresh to show new queue info
+        
+    } catch (error) {
+        console.error('Reschedule error:', error);
+        alert('Error: ' + error.message);
+    }
+}
+
 function rescheduleAppointment() {
-    console.log('📅 Reschedule requested');
-    alert('Rescheduling feature coming soon!');
+    openRescheduleModal();
 }
 
 function cancelAppointment() {
